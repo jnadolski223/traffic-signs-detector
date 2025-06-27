@@ -6,8 +6,16 @@ import cv2
 import albumentations as A
 from tqdm import tqdm
 
-def get_full_path(*path_args):
-    return os.path.join(os.path.dirname(__file__), *path_args)
+# Główne zmienne
+DATASET_NAME_OLD = "classification-dataset"
+DATASET_NAME_NEW = "processed-classification-dataset"
+IMAGE_EXTENTIONS = [".jpg", ".jpeg", ".png"]
+CLASS_IMAGE_LIMIT = 768  # trening - 512, walidacja - 128, test - 128
+TARGET_IMAGE_SIZE = (224, 224)
+PROGRESSBAR_FORMAT = (
+    "{desc}: |{bar}| {percentage:.1f}% "
+    "[Przeanalizowano: {n_fmt}/{total_fmt}, Czas: {elapsed}, Pozostało: {remaining}]"
+)
 
 # Konfiguracja modelu do augmentacji obrazów
 augmenter = A.Compose([
@@ -18,71 +26,84 @@ augmenter = A.Compose([
     A.MultiplicativeNoise(p=0.5, multiplier=(0.9, 1.1)),
 ])
 
-# Główne zmienne
-dataset_dir_current = "classification-dataset"
-dataset_dir_new = "processed-classification-dataset"
-img_extentions = [".jpg", ".jpeg", ".png"]
-img_class_limit = 700
-target_size = (64, 64)
-bar_format = (
-    "{desc}: |{bar}| {percentage:.1f}% "
-    "[{n_fmt}/{total_fmt} obrazy przeanalizowane, "
-    "Czas: {elapsed}, "
-    "Pozostało: {remaining}, "
-    "Prędkość: {rate_fmt}]"
-)
+# Funkcja zwracająca ścieżkę bezwzględną do pliku/folderu
+def get_full_path(*path_args):
+    return os.path.join(os.path.dirname(__file__), *path_args)
 
-# Sprawdzanie folderu z datasetem
-print(f"Sprawdzam folder {get_full_path(dataset_dir_current)}")
-class_dirs = os.listdir(get_full_path(dataset_dir_current))
-print(f"Liczba klas obrazów: {len(class_dirs)}")
+# Funkcja kopiuje obrazy oraz zmienia ich nazwy na format {class_name}-{i}{image_extension}
+def copy_and_rename_images(class_name, images):
+    class_path_old = get_full_path(DATASET_NAME_OLD, class_name)
+    class_path_new = get_full_path(DATASET_NAME_NEW, class_name)
+    os.makedirs(class_path_new, exist_ok=True)
+    
+    copied_count = 0
+    for i, image_name_old in tqdm(enumerate(images), total=len(images), desc=f"Kopiowanie klasy {class_name}", bar_format=PROGRESSBAR_FORMAT, dynamic_ncols=True):
+        image_extention = os.path.splitext(image_name_old)[1].lower()
+        image_name_new = f"{class_name}-{i+1}{image_extention}"
+        shutil.copy(get_full_path(class_path_old, image_name_old), get_full_path(class_path_new, image_name_new))
+        copied_count += 1
+    
+    return copied_count
 
-# Tworzenie folderu wyjściowego dla nowego datasetu
-os.makedirs(get_full_path(dataset_dir_new), exist_ok=True)
+# Funckja augmentuje obrazy do podanego limitu obrazów na klasę
+def augment_images(class_name, existing_count):
+    missing = CLASS_IMAGE_LIMIT - existing_count
+    if missing <= 0:
+        return 0
+    
+    class_path_new = get_full_path(DATASET_NAME_NEW, class_name)
+    original_images = [get_full_path(class_path_new, image_name) for image_name in os.listdir(class_path_new)]
 
-for idx, class_dir in enumerate(class_dirs, 1):
-    # Sprawdzanie czy klasa obrazów jest folderem
-    class_dir_path = get_full_path(dataset_dir_current, class_dir)
-    if not os.path.isdir(class_dir_path):
-        continue
+    augmented_count = 0
+    for i in tqdm(range(missing), desc=f"Augmentacja klasy {class_name}", bar_format=PROGRESSBAR_FORMAT, dynamic_ncols=True):
+        selected_image_path = original_images[i % existing_count]
+        image_content = imageio.v2.imread(selected_image_path)
+        augmented_image = augmenter(image=image_content)["image"]
+        augmented_image_name = f"{class_name}-{existing_count + i + 1}.jpg"
+        imageio.imwrite(get_full_path(class_path_new, augmented_image_name), augmented_image)
+        augmented_count += 1
+    
+    return augmented_count
 
-    # Tworzenie folderu wyjściowego dla klasy obrazów
-    os.makedirs(get_full_path(dataset_dir_new, class_dir), exist_ok=True)
+# Funkcja skaluje obrazy do wybranego rozmiaru
+def resize_images(class_name):
+    class_path = get_full_path(DATASET_NAME_NEW, class_name)
 
-    # Zbieranie listy obrazów w klasie do wybranego limitu obrazów na klasę
-    full_class_imgs = [image for image in os.listdir(class_dir_path) if os.path.splitext(image)[1].lower() in img_extentions]
-    class_imgs = random.sample(full_class_imgs, min(img_class_limit, len(full_class_imgs)))
-    num_of_imgs = len(class_imgs)
+    resized_count = 0
+    for image_name in tqdm(os.listdir(class_path), desc=f"Skalowanie klasy {class_name}", bar_format=PROGRESSBAR_FORMAT, dynamic_ncols=True):
+        image_path = os.path.join(class_path, image_name)
+        image_content = imageio.v2.imread(image_path)
+        resized_image = cv2.resize(image_content, TARGET_IMAGE_SIZE, interpolation=cv2.INTER_AREA)
+        imageio.imwrite(image_path, resized_image)
+        resized_count += 1
+    
+    return resized_count
 
-    # ETAP 1 - Zmiana nazwy obrazów i kopiowanie do nowego folderu
-    for i, img_name in tqdm(enumerate(class_imgs), total=num_of_imgs, desc=f"Kopiowanie klasy {class_dir}", bar_format=bar_format, dynamic_ncols=True):
-        current_img_path = get_full_path(class_dir_path, img_name)
-        img_new_name = f"{class_dir}-{i+1}{os.path.splitext(img_name)[1].lower()}"
-        new_img_path = get_full_path(dataset_dir_new, class_dir, img_new_name)
-        shutil.copy(current_img_path, new_img_path)
+# Funkcja przetwarza obrazy: kopiowanie, zmiana nazwy, augmentacja, skalowanie
+def process_class(class_name, idx, total):
+    class_images = [
+        image_name for image_name in os.listdir(get_full_path(DATASET_NAME_OLD, class_name)) 
+        if os.path.splitext(image_name)[1].lower() in IMAGE_EXTENTIONS
+    ]
+    
+    selected_class_images = random.sample(class_images, min(CLASS_IMAGE_LIMIT, len(class_images)))
+    copied_count = copy_and_rename_images(class_name, selected_class_images)
+    augmented_count = augment_images(class_name, len(selected_class_images))
+    resized_count = resize_images(class_name)
+    print(f"[{idx}/{total}] Klasa: {class_name}, Skopiowane obrazy: {copied_count}, Zaugmentowane obrazy: {augmented_count}, Przeskalowane obrazy: {resized_count}\n")
 
-    # ETAP 2 - Augmentacja obrazów w celu dopełnienia wybranego limitu obrazów na klasę
-    missing_imgs = img_class_limit - num_of_imgs
-    if (missing_imgs > 0):
-        original_imgs = [get_full_path(dataset_dir_new, class_dir, f"{class_dir}-{i+1}{os.path.splitext(class_imgs[i])[1].lower()}") for i in range(num_of_imgs)]
+# Funkcja przetwarza obrazy z całego datasetu i tworzy przetworzoną kopię
+def main():
+    os.makedirs(get_full_path(DATASET_NAME_NEW), exist_ok=True)
+    class_list = [
+        class_dir for class_dir in os.listdir(get_full_path(DATASET_NAME_OLD)) 
+        if os.path.isdir(get_full_path(DATASET_NAME_OLD, class_dir))
+    ]
 
-        for i in tqdm(range(missing_imgs), desc=f"Augmentacja klasy {class_dir}", bar_format=bar_format, dynamic_ncols=True):
-            img_path = original_imgs[i % num_of_imgs]
-            image = imageio.v2.imread(img_path)
-            augmented_image = augmenter(image=image)["image"]
-            new_img_name = f"{class_dir}-{num_of_imgs + i + 1}.jpg"
-            output_img_path = get_full_path(dataset_dir_new, class_dir, new_img_name)
-            imageio.imwrite(output_img_path, augmented_image)
+    for idx, class_name in enumerate(class_list, 1):
+        process_class(class_name, idx, len(class_list))
+    
+    print(f"GOTOWE! Zakończono przetwarzanie obrazów. Każda klasa zawiera po {CLASS_IMAGE_LIMIT} obrazów o rozmirach {TARGET_IMAGE_SIZE[0]}x{TARGET_IMAGE_SIZE[1]}")
 
-    # ETAP 3 - Skalowanie obrazów do wybranego rozmiaru
-    new_class_dir_path = get_full_path(dataset_dir_new, class_dir)
-    for img_file in tqdm(os.listdir(new_class_dir_path), desc=f"Skalowanie klasy {class_dir}", bar_format=bar_format, dynamic_ncols=True):
-        img_path = os.path.join(new_class_dir_path, img_file)
-        image = imageio.v2.imread(img_path)
-        resized_image = cv2.resize(image, target_size, interpolation=cv2.INTER_AREA)
-        imageio.imwrite(img_path, resized_image)
-
-    print(f"[{idx}/{len(class_dirs)}] Klasa: {class_dir}, Skopiowane obrazy: {num_of_imgs}, Zaugmentowane obrazy: {missing_imgs}, Przeskalowane obrazy: {len(os.listdir(new_class_dir_path))}")
-    print()
-
-print(f"GOTOWE: Zakończono proces przenoszenia, augmentacji i skalowania obrazów. Każda klasa powinna zawierać 700 obrazów o rozmiarach {target_size[0]} x {target_size[1]}")
+if __name__ == "__main__":
+    main()
