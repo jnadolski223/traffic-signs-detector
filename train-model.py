@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 from keras import layers, models, utils, callbacks
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -7,7 +6,6 @@ import pandas as pd
 DATASET_PATH = os.path.join(os.path.dirname(__file__), "split-classification-dataset")
 TRAIN_DIR = os.path.join(DATASET_PATH, "train")
 VAL_DIR = os.path.join(DATASET_PATH, "val")
-TEST_DIR = os.path.join(DATASET_PATH, "test")
 
 IMAGE_SIZE = (224, 224)
 BATCH_SIZE = 32
@@ -15,8 +13,30 @@ INPUT_SHAPE = (224, 224, 3)
 NUMBER_OF_CLASSES = 50
 EPOCHS = 100
 
-# Funkcja tworzy i kompiluje model
-def create_model():
+# Funkcja tworzy i kompiluje lekki model CNN
+def create_lightweight_model():
+    model = models.Sequential([
+        layers.Input(shape=INPUT_SHAPE),
+
+        layers.Conv2D(16, (3, 3), activation="relu"),
+        layers.MaxPooling2D((2, 2)),
+
+        layers.Conv2D(32, (3, 3), activation="relu"),
+        layers.MaxPooling2D((2, 2)),
+
+        layers.Flatten(),
+
+        layers.Dense(128, activation="relu"),
+        layers.Dropout(0.3),
+        layers.Dense(NUMBER_OF_CLASSES, activation="softmax")
+    ])
+
+    model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+
+    return model
+
+# Funkcja tworzy i kompiluje średniozaawansowany model CNN
+def create_medium_model():
     model = models.Sequential([
         layers.Input(shape=INPUT_SHAPE),
 
@@ -40,8 +60,39 @@ def create_model():
 
     return model
 
+# Funkcja tworzy i kompiluje zaawansowany model CNN
+def create_advanced_model():
+    model = models.Sequential([
+        layers.Input(shape=INPUT_SHAPE),
+
+        layers.Conv2D(32, (3, 3)),
+        layers.BatchNormalization(),
+        layers.LeakyReLU(),
+        layers.MaxPooling2D((2, 2)),
+
+        layers.Conv2D(64, (3, 3)),
+        layers.BatchNormalization(),
+        layers.LeakyReLU(),
+        layers.MaxPooling2D((2, 2)),
+
+        layers.Conv2D(128, (3, 3)),
+        layers.BatchNormalization(),
+        layers.LeakyReLU(),
+        layers.MaxPooling2D((2, 2)),
+
+        layers.Flatten(),
+
+        layers.Dense(1024, activation="relu"),
+        layers.Dropout(0.7),
+        layers.Dense(NUMBER_OF_CLASSES, activation="softmax")
+    ])
+
+    model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+
+    return model
+
 # Funkcja wyświetla statystyki uczenia się modelu
-def summarize_diagnostics(history, file_name = "train_plot.png"):
+def summarize_diagnostics(history, file_name = "cnn-model-plot.png"):
     plt.figure(figsize=(12, 5))
 
     plt.subplot(1, 2, 1)
@@ -63,22 +114,27 @@ def summarize_diagnostics(history, file_name = "train_plot.png"):
     plt.grid(True, linestyle="--", linewidth=0.5, color="gray")
 
     plt.tight_layout()
-
     plt.savefig(file_name)
     plt.show()
 
-    print(f"Wykres zapisano jako: {os.path.abspath(file_name)}")
+    print(f"Wykres zapisano jako: {file_name}")
 
 # Funkcja uczy utworzony model, a na końcu go zapisuje i wyświetla podsumowanie
 def main():
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    os.makedirs(os.path.join(os.path.dirname(__file__), "checkpoints"))
+    # model_type = "lightweight"
+    model_type = "medium"
+    # model_type = "advanced"
 
-    final_model_name = f"model_cnn_final_{timestamp}.keras"
-    checkpoint_filename = f"checkpoints/model_checkpoint_best_{timestamp}.keras"
-    plot_filename = f"training_plot_{timestamp}.png"
-
-    model = create_model()
+    if model_type == "lightweight":
+        model = create_lightweight_model()
+    elif model_type == "medium":
+        model = create_medium_model()
+    elif model_type == "advanced":
+        model = create_advanced_model()
+    else:
+        raise ValueError(f"Nieznany model_type: {model_type}")
+    
+    model.summary()
 
     train_set = utils.image_dataset_from_directory(
         directory=TRAIN_DIR, labels="inferred", label_mode="int",
@@ -91,15 +147,15 @@ def main():
     )
 
     early_stop = callbacks.EarlyStopping(monitor="val_loss", patience=5, restore_best_weights=True)
-    model_checkpoint = callbacks.ModelCheckpoint(filepath=checkpoint_filename, monitor="val_accuracy", save_best_only=True)
+    model_checkpoint = callbacks.ModelCheckpoint(filepath=f"{model_type}-cnn-model-checkpoint.keras", monitor="val_accuracy", save_best_only=True)
 
     history = model.fit(train_set, validation_data=val_set, epochs=EPOCHS, callbacks=[early_stop, model_checkpoint])
 
-    model.save(final_model_name)
-    print(f"Model zapisano jako: {os.path.abspath(final_model_name)}")
+    model.save(f"{model_type}-cnn-model.keras")
+    print(f"Model zapisano jako: {model_type}-cnn-model.keras")
 
-    summarize_diagnostics(history, file_name=plot_filename)
-    pd.DataFrame(history.history).to_csv(f"training_history_{timestamp}.csv")
+    summarize_diagnostics(history, file_name=f"{model_type}-cnn-model-plot.png")
+    pd.DataFrame(history.history).to_csv(f"{model_type}-cnn-model-history.csv")
 
 if __name__ == "__main__":
     main()
