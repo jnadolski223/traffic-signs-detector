@@ -9,6 +9,8 @@ from keras.preprocessing.image import img_to_array
 # Główne zmienne
 DETECTOR_MODEL_PATH = os.path.join("detection-model-results", "weights", "best.pt")
 CLASSIFICATOR_MODEL_PATH = os.path.join("classification-model-results", "classification-model.keras")
+TEST_DATASET_DIR = "test-detection-dataset"
+TEST_RESULTS_DIR = "test-results"
 PROGRESSBAR_FORMAT = (
     "{desc}: |{bar}| {percentage:.1f}% "
     "[Przeanalizowano: {n_fmt}/{total_fmt}, Czas: {elapsed}, Pozostało: {remaining}]"
@@ -65,11 +67,11 @@ def process_image(image_path, savefile):
     cv2.imwrite(savefile, image)
 
 def main():
-    os.makedirs("test-results", exist_ok=True)
-    image_files = [f for f in os.listdir("test-detection-dataset") if f.lower().endswith((".jpg", ".jpeg", ".png"))]
+    os.makedirs(TEST_RESULTS_DIR, exist_ok=True)
+    image_files = [f for f in os.listdir(TEST_DATASET_DIR) if f.lower().endswith((".jpg", ".jpeg", ".png"))]
     for idx, image_file in enumerate(tqdm(image_files, desc="Przetwarzanie obrazów", bar_format=PROGRESSBAR_FORMAT, dynamic_ncols=True)):
-        input_path = os.path.join("test-detection-dataset", image_file)
-        output_path = os.path.join("test-results", f"result-{idx+1}.jpg")
+        input_path = os.path.join(TEST_DATASET_DIR, image_file)
+        output_path = os.path.join(TEST_RESULTS_DIR, f"result-{idx+1}.jpg")
         process_image(input_path, output_path)
 
 if __name__ == "__main__":
