@@ -1,0 +1,6 @@
+path: split-detection-dataset
+train: images/train
+val: images/val
+
+names:
+  0: road_sign

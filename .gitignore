@@ -1,5 +1,7 @@
 classification-dataset
+classification-model-results
 detection-dataset
+detection-model-results
 processed-classification-dataset
 split-classification-dataset
-cnn-models
+split-detection-dataset

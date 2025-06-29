@@ -26,21 +26,17 @@ augmenter = A.Compose([
     A.MultiplicativeNoise(p=0.5, multiplier=(0.9, 1.1)),
 ])
 
-# Funkcja zwracająca ścieżkę bezwzględną do pliku/folderu
-def get_full_path(*path_args):
-    return os.path.join(os.path.dirname(__file__), *path_args)
-
 # Funkcja kopiuje obrazy oraz zmienia ich nazwy na format {class_name}-{i}{image_extension}
 def copy_and_rename_images(class_name, images):
-    class_path_old = get_full_path(DATASET_NAME_OLD, class_name)
-    class_path_new = get_full_path(DATASET_NAME_NEW, class_name)
+    class_path_old = os.path.join(DATASET_NAME_OLD, class_name)
+    class_path_new = os.path.join(DATASET_NAME_NEW, class_name)
     os.makedirs(class_path_new, exist_ok=True)
     
     copied_count = 0
     for i, image_name_old in tqdm(enumerate(images), total=len(images), desc=f"Kopiowanie klasy {class_name}", bar_format=PROGRESSBAR_FORMAT, dynamic_ncols=True):
         image_extention = os.path.splitext(image_name_old)[1].lower()
         image_name_new = f"{class_name}-{i+1}{image_extention}"
-        shutil.copy(get_full_path(class_path_old, image_name_old), get_full_path(class_path_new, image_name_new))
+        shutil.copy(os.path.join(class_path_old, image_name_old), os.path.join(class_path_new, image_name_new))
         copied_count += 1
     
     return copied_count
@@ -51,8 +47,8 @@ def augment_images(class_name, existing_count):
     if missing <= 0:
         return 0
     
-    class_path_new = get_full_path(DATASET_NAME_NEW, class_name)
-    original_images = [get_full_path(class_path_new, image_name) for image_name in os.listdir(class_path_new)]
+    class_path_new = os.path.join(DATASET_NAME_NEW, class_name)
+    original_images = [os.path.join(class_path_new, image_name) for image_name in os.listdir(class_path_new)]
 
     augmented_count = 0
     for i in tqdm(range(missing), desc=f"Augmentacja klasy {class_name}", bar_format=PROGRESSBAR_FORMAT, dynamic_ncols=True):
@@ -60,14 +56,14 @@ def augment_images(class_name, existing_count):
         image_content = imageio.v2.imread(selected_image_path)
         augmented_image = augmenter(image=image_content)["image"]
         augmented_image_name = f"{class_name}-{existing_count + i + 1}.jpg"
-        imageio.imwrite(get_full_path(class_path_new, augmented_image_name), augmented_image)
+        imageio.imwrite(os.path.join(class_path_new, augmented_image_name), augmented_image)
         augmented_count += 1
     
     return augmented_count
 
 # Funkcja skaluje obrazy do wybranego rozmiaru
 def resize_images(class_name):
-    class_path = get_full_path(DATASET_NAME_NEW, class_name)
+    class_path = os.path.join(DATASET_NAME_NEW, class_name)
 
     resized_count = 0
     for image_name in tqdm(os.listdir(class_path), desc=f"Skalowanie klasy {class_name}", bar_format=PROGRESSBAR_FORMAT, dynamic_ncols=True):
@@ -82,7 +78,7 @@ def resize_images(class_name):
 # Funkcja przetwarza obrazy: kopiowanie, zmiana nazwy, augmentacja, skalowanie
 def process_class(class_name, idx, total):
     class_images = [
-        image_name for image_name in os.listdir(get_full_path(DATASET_NAME_OLD, class_name)) 
+        image_name for image_name in os.listdir(os.path.join(DATASET_NAME_OLD, class_name)) 
         if os.path.splitext(image_name)[1].lower() in IMAGE_EXTENTIONS
     ]
     
@@ -94,10 +90,10 @@ def process_class(class_name, idx, total):
 
 # Funkcja przetwarza obrazy z całego datasetu i tworzy przetworzoną kopię
 def main():
-    os.makedirs(get_full_path(DATASET_NAME_NEW), exist_ok=True)
+    os.makedirs(DATASET_NAME_NEW, exist_ok=True)
     class_list = [
-        class_dir for class_dir in os.listdir(get_full_path(DATASET_NAME_OLD)) 
-        if os.path.isdir(get_full_path(DATASET_NAME_OLD, class_dir))
+        class_dir for class_dir in os.listdir(DATASET_NAME_OLD) 
+        if os.path.isdir(os.path.join(DATASET_NAME_OLD, class_dir))
     ]
 
     for idx, class_name in enumerate(class_list, 1):
