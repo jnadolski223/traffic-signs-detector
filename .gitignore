@@ -1,9 +1,12 @@
 node_modules
+
 classification-dataset
-classification-model-results
-detection-dataset
-detection-model-results
 processed-classification-dataset
 split-classification-dataset
+
+detection-dataset
 split-detection-dataset
 test-detection-dataset
+
+classification-model.keras
+detection-model.pt

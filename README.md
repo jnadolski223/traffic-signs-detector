@@ -72,7 +72,7 @@ Do uczenia zostały utworzone 2 checkpointy:
 Model był docelowo trenowany na 100 epok, lecz trening skończył się już po 15 epokach.  
 Wyniki uczenia przedstawiono na wykresie.  
 
-!["Wykres treningu klasyfikatora"](./classification-model-results/classification-model-plot.png)
+!["Wykres treningu klasyfikatora"](./classification-model-plot.png)
 
 Wyjasnienie parametrów:
 - **Train accuracy** - skuteczność modelu podczas treningu
@@ -104,7 +104,7 @@ Schemat działania algorytmu:
 ### Wyniki treningu  
 Wyniki treningu na 50 epokach pokazano na wykresie.  
 
-!["Wykres treningu detektora"](./detection-model-results/results.png)
+!["Wykres treningu detektora"](./detection-model-plot.png)
 
 Wyjaśnienie parametrów:
 - **box_loss** - błąd dopasowania ramek

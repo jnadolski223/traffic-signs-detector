@@ -1,4 +1,3 @@
-import os
 import cv2
 import base64
 import logging
@@ -15,8 +14,8 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-DETECTOR_MODEL_PATH = os.path.join("detection-model-results", "weights", "best.pt")
-CLASSIFICATOR_MODEL_PATH = os.path.join("classification-model-results", "classification-model.keras")
+DETECTOR_MODEL_PATH = "detection-model.pt"
+CLASSIFICATOR_MODEL_PATH = "classification-model.keras"
 CLASSIFICATOR_IMAGE_FORMAT = (224, 224)
 CLASS_NAMES = {
     0: "A1", 1: "A11a", 2: "A12", 3: "A16", 4: "A17",

@@ -16,7 +16,7 @@ def main():
     os.makedirs(RESULTS_DIR, exist_ok=True)
     images = [os.path.join(VAL_DIR, f) for f in os.listdir(VAL_DIR)]
 
-    model = YOLO("detection-model-results/weights/best.pt")
+    model = YOLO("detection-model.pt")
     for image in tqdm(images, desc="Predykcja YOLO", bar_format=PROGRESSBAR_FORMAT, dynamic_ncols=True):
         results = model(image, verbose=False)
         result = results[0]

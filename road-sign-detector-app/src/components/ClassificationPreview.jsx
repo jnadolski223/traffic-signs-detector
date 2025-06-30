@@ -4,7 +4,7 @@ export default function ClassificationPreview({ roadSigns }) {
     return (
         <div style={styles.wrapper}>
             <h2 style={styles.sectionTitle}>Classified road signs</h2>
-            {roadSigns.length > 0 ? roadSigns.map((sign, idx) => <RoadSignInfo key={idx} roadSign={sign}/>) : <p>No signs detected</p>}
+            {roadSigns.length > 0 ? roadSigns.map((sign, idx) => <RoadSignInfo key={idx} roadSign={sign}/>) : <p style={styles.sectionTitle}>No signs detected</p>}
         </div>
     );
 };

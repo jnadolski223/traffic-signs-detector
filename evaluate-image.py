@@ -7,8 +7,8 @@ from keras.models import load_model
 from keras.preprocessing.image import img_to_array
 
 # Główne zmienne
-DETECTOR_MODEL_PATH = os.path.join("detection-model-results", "weights", "best.pt")
-CLASSIFICATOR_MODEL_PATH = os.path.join("classification-model-results", "classification-model.keras")
+DETECTOR_MODEL_PATH = "detection-model.pt"
+CLASSIFICATOR_MODEL_PATH = "classification-model.keras"
 TEST_DATASET_DIR = "test-detection-dataset"
 TEST_RESULTS_DIR = "test-results"
 PROGRESSBAR_FORMAT = (

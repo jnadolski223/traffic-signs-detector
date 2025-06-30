@@ -7,7 +7,7 @@ from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, classification_report
 
 # Główne zmienne
-MODEL_PATH = os.path.join("classification-model-results", "classification-model.keras")
+MODEL_PATH = "classification-model.keras"
 TEST_DIR = os.path.join("split-classification-dataset", "test")
 
 IMAGE_SIZE = (224, 224)
