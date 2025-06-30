@@ -7,7 +7,7 @@ Aplikacja skłąda się z dwóch mikroserwisów:
 - frontend - aplikacja React działająca na porcie 5173
 - backend - aplikaja Flask działająca na porcie 5000
 
-### Jakie modele AI zostały wykorzystane?  
+### Jakie modele zostały wykorzystane?  
 Aplikacja korzysta z **dwóch** modeli **konwolucyjnych sieci neuronowych**:
 1. Detektor - odpowiada za wykrycie znaków drogowych na zdjęciu
 2. Klasyfikator - odpowiada za przypisanie klasy do każdego wykrytego znaku drogowego
@@ -19,10 +19,10 @@ Aplikacja korzysta z **dwóch** modeli **konwolucyjnych sieci neuronowych**:
 
 ## Lista rozpoznawanych znaków drogowych  
 Aplikacja jest w stanie rozpoznać łącznie **50** klas polskich znaków drogowych.  
-Znaki ostrzegawcze: A1, A2, A3, A4, A6-a, A6-b, A6-c, A6-d, A6-e, A7, A11-a A12, A16, A17, A18-b, A21, A29, A30, A32
-Znaki zakazu: B1, B2, B5, B20, B21, B22, B23, B25, B26, B33, B36, B41
-Znaki nakazu: C2, C4, C5, C9, C10, C12
-Znaki informacyjne: D1, D2, D3, D4-a, D6, D6-b, D15, D18, D23, D28, D29, D42, D43
+Znaki ostrzegawcze: A1, A2, A3, A4, A6-a, A6-b, A6-c, A6-d, A6-e, A7, A11-a A12, A16, A17, A18-b, A21, A29, A30, A32  
+Znaki zakazu: B1, B2, B5, B20, B21, B22, B23, B25, B26, B33, B36, B41  
+Znaki nakazu: C2, C4, C5, C9, C10, C12  
+Znaki informacyjne: D1, D2, D3, D4-a, D6, D6-b, D15, D18, D23, D28, D29, D42, D43  
 
 ## Preprocessing obrazów  
 ### Obrazy do klasyfikatora  

@@ -6,7 +6,7 @@ EPOCHS = 50
 PROJECT_DIR = "yolo-models"
 OUTPUT_DIR = "road-sign-detector"
 
-# Funkcja pobiera model YOLOv8n i dotrenowuje go na danych we wskazanym pliku
+# Funkcja pobiera model YOLOv8n i dotrenowuje go na danych we wskazanym folderze
 def main():
     model = YOLO("yolov8n.pt")
 
